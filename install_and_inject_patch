@@ -1,0 +1,61 @@
+#!/bin/bash
+
+echo 'Closing Discord...'
+
+PID=$(ps -ef | grep Discord.app/Contents/MacOS/Discord | awk '{print $2}' | head -1)
+kill -9 $PID
+
+echo 'Creating temporary filestore...'
+
+mkdir -p ~/Downloads/discord_patch_v1/tmp
+echo 'Downloading injector from rauenzi/BetterDiscordApp...'
+
+curl -o ~/Downloads/discord_patch_v1/tmp/BetterDiscordApp-injector.zip https://github.com/rauenzi/BetterDiscordApp/archive/injector.zip -O -J -L
+echo 'Unzipping the injector...'
+
+unzip -o ~/Downloads/discord_patch_v1/tmp/BetterDiscordApp-injector.zip -d ~/Downloads/discord_patch_v1/tmp/
+
+echo 'Cleaning up existing application files...'
+
+rm -rf /Applications/Discord.app/Contents/Resources/app/*
+
+echo 'Moving injector into Discord.app...'
+
+mkdir -p /Applications/Discord.app/Contents/Resources/app
+mv ~/Downloads/discord_patch_v1/tmp/BetterDiscordApp-injector/* /Applications/Discord.app/Contents/Resources/app/
+
+echo 'Removing temporary files...'
+
+rm -rf ~/Downloads/discord_patch_v1
+
+echo 'Done replacing Discord.app with BetterDiscordApp.app.'
+echo 'Adjusting settings to allow for a minimum width of 0...'
+
+JSON_STRING='{ "BACKGROUND_COLOR": "#202225", "IS_MAXIMIZED": false, "IS_MINIMIZED": false, "MIN_WIDTH": 0, "MAX_WIDTH": 0, "WINDOW_BOUNDS": { "x": 177, "y": 102, "width": 1179, "height": 869 } }'
+
+rm ~/Library/Application\ Support/discord/settings.json
+touch ~/Library/Application\ Support/discord/settings.json
+
+echo $JSON_STRING >> ~/Library/Application\ Support/discord/settings.json
+echo $JSON_STRING 
+
+echo 'Injecting custom CSS for collapsible sidebar...'
+
+curl -o ~/Library/Preferences/BetterDiscord/data/stable/custom.css https://gist.githubusercontent.com/emmahyde/9585adaeeaea00cf7510145b54702a2b/raw/4d80954f9b90add4a307b8427add065d4ef27c60/discord_collapse_sidebar.css
+
+echo 'Upgrading to BetterDiscord beta...'
+
+CONFIG_1='{ "local": false, "localPath": "", "dataPath": "Users'
+CONFIG_2='Library/Preferences/BetterDiscord/", "branch": "gh-pages-development" }'
+BETA_CONFIG=$CONFIG_1/$USER/$CONFIG_2
+
+rm -f /Applications/Discord.app/Contents/Resources/app/betterdiscord/config.json
+mkdir -p /Applications/Discord.app/Contents/Resources/app/betterdiscord
+touch /Applications/Discord.app/Contents/Resources/app/betterdiscord/config.json
+echo $BETA_CONFIG >> /Applications/Discord.app/Contents/Resources/app/betterdiscord/config.json
+echo $BETA_CONFIG
+
+echo 'BetterDiscord upgrade & custom mods complete.'
+echo 'Relaunching Discord, then exiting.'
+
+open /Applications/Discord.app
